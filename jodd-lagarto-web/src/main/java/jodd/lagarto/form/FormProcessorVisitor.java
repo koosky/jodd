@@ -1,11 +1,38 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.lagarto.form;
 
 import jodd.lagarto.Tag;
 import jodd.lagarto.TagType;
 import jodd.lagarto.TagWriter;
+import jodd.mutable.MutableInteger;
 import jodd.util.StringUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Form processor. Invokes {@link jodd.lagarto.form.FormFieldResolver} on form fields.
@@ -88,29 +115,32 @@ public class FormProcessorVisitor extends TagWriter {
 		if (tagType == null) {
 			return;
 		}
-		CharSequence name = tag.getAttributeValue(NAME);
-		if (name == null) {
+		CharSequence nameSequence = tag.getAttributeValue(NAME);
+		if (nameSequence == null) {
 			return;
 		}
 
-		Object valueObject = resolver.value(name.toString());
+		String name = nameSequence.toString();
+
+		Object valueObject = resolver.value(name);
 		if (valueObject == null) {
 			return;
 		}
 
-		String value = valueObject.toString();
 		String tagTypeName = tagType.toString().toLowerCase();
 
-		if (tagTypeName.equals(TEXT)) {
-			tag.setAttribute(VALUE, value);
-		}
-		else if (tagTypeName.equals(HIDDEN)) {
-			tag.setAttribute(VALUE, value);
-		}
-		else if (tagTypeName.equals(IMAGE)) {
-			tag.setAttribute(VALUE, value);
-		}
-		else if (tagTypeName.equals(PASSWORD)) {
+		if (
+				tagTypeName.equals(TEXT) ||
+				tagTypeName.equals(HIDDEN) ||
+				tagTypeName.equals(IMAGE) ||
+				tagTypeName.equals(PASSWORD)) {
+
+			String value = valueToString(name, valueObject);
+
+			if (value == null) {
+				return;
+			}
+
 			tag.setAttribute(VALUE, value);
 		}
 		else if (tagTypeName.equals(CHECKBOX)) {
@@ -128,7 +158,7 @@ public class FormProcessorVisitor extends TagWriter {
 						tag.setAttribute(CHECKED, null);
 					}
 				}
-			} else if (tagValue.equals(value)) {
+			} else if (tagValue.equals(valueObject.toString())) {
 				tag.setAttribute(CHECKED, null);
 			}
 		}
@@ -136,11 +166,47 @@ public class FormProcessorVisitor extends TagWriter {
 			CharSequence tagValue = tag.getAttributeValue(VALUE);
 			if (tagValue != null) {
 				tagValue = tagValue.toString();
-				if (tagValue.equals(value)) {
+				if (tagValue.equals(valueObject.toString())) {
 					tag.setAttribute(CHECKED, null);
 				}
 			}
 		}
+	}
+
+	// ---------------------------------------------------------------- convert values to string
+
+	protected Map<String, MutableInteger> valueNameIndexes;
+
+	/**
+	 * Converts value to a string.
+	 */
+	protected String valueToString(String name, Object valueObject) {
+		if (!valueObject.getClass().isArray()) {
+			return valueObject.toString();
+		}
+
+		// array
+		String[] array = (String[]) valueObject;
+
+		if (valueNameIndexes == null) {
+			valueNameIndexes = new HashMap<>();
+		}
+
+		MutableInteger index = valueNameIndexes.get(name);
+		if (index == null) {
+			index = new MutableInteger(0);
+			valueNameIndexes.put(name, index);
+		}
+
+		if (index.value >= array.length) {
+			return null;
+		}
+
+		String result = array[index.value];
+
+		index.value++;
+
+		return result;
 	}
 
 	// ---------------------------------------------------------------- select

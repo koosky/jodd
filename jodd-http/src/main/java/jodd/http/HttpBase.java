@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.http;
 
@@ -12,7 +35,7 @@ import jodd.io.StreamUtil;
 import jodd.upload.FileUpload;
 import jodd.upload.MultipartStreamParser;
 import jodd.util.MimeTypes;
-import jodd.util.RandomStringUtil;
+import jodd.util.RandomString;
 import jodd.util.StringPool;
 import jodd.util.StringUtil;
 
@@ -24,7 +47,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static jodd.util.StringPool.CRLF;
@@ -49,9 +72,9 @@ public abstract class HttpBase<T> {
 	public static final String HTTP_1_1 = "HTTP/1.1";
 
 	protected String httpVersion = HTTP_1_1;
-	protected HttpValuesMap<String> headers = HttpValuesMap.ofStrings();
+	protected HttpMultiMap<String> headers = HttpMultiMap.newCaseInsensitveMap();
 
-	protected HttpValuesMap<Object> form;	// holds form data (when used)
+	protected HttpMultiMap<?> form;			// holds form data (when used)
 	protected String body;					// holds raw body string (always)
 
 	// ---------------------------------------------------------------- properties
@@ -80,23 +103,14 @@ public abstract class HttpBase<T> {
 	 * if header doesn't exist.
 	 */
 	public String header(String name) {
-		String key = name.trim().toLowerCase();
-
-		Object value = headers.getFirst(key);
-
-		if (value == null) {
-			return null;
-		}
-		return value.toString();
+		return headers.get(name);
 	}
 
 	/**
 	 * Returns all values for given header name.
 	 */
-	public String[] headers(String name) {
-		String key = name.trim().toLowerCase();
-
-		return headers.getStrings(key);
+	public List<String> headers(String name) {
+		return headers.getAll(name);
 	}
 
 	/**
@@ -175,12 +189,10 @@ public abstract class HttpBase<T> {
 	}
 
 	/**
-	 * Returns unmodifiable map of all headers values. Header names are
-	 * the keys of this map and they are all stored in lower case.
-	 * Header values can be either <code>null</code> or an String array.
+	 * Returns {@link HttpMultiMap} of all headers.
 	 */
-	public Map<String, String[]> headers() {
-		return Collections.unmodifiableMap(headers);
+	public HttpMultiMap<String> headers() {
+		return headers;
 	}
 
 	// ---------------------------------------------------------------- content type
@@ -371,7 +383,7 @@ public abstract class HttpBase<T> {
 	 */
 	protected void initForm() {
 		if (form == null) {
-			form = HttpValuesMap.ofObjects();
+			form = HttpMultiMap.newCaseInsensitveMap();
 		}
 	}
 
@@ -385,6 +397,12 @@ public abstract class HttpBase<T> {
 			return null;
 		}
 		if (value instanceof CharSequence) {
+			return value.toString();
+		}
+		if (value instanceof Number) {
+			return value.toString();
+		}
+		if (value instanceof Boolean) {
 			return value.toString();
 		}
 		if (value instanceof File) {
@@ -407,7 +425,7 @@ public abstract class HttpBase<T> {
 		initForm();
 
 		value = wrapFormValue(value);
-		form.add(name, value);
+		((HttpMultiMap<Object>)form).add(name, value);
 
 		return (T) this;
 	}
@@ -421,9 +439,9 @@ public abstract class HttpBase<T> {
 		value = wrapFormValue(value);
 
 		if (overwrite) {
-			form.set(name, value);
+			((HttpMultiMap<Object>)form).set(name, value);
 		} else {
-			form.add(name, value);
+			((HttpMultiMap<Object>)form).add(name, value);
 		}
 
 		return (T) this;
@@ -461,7 +479,7 @@ public abstract class HttpBase<T> {
 	 * Return map of form parameters.
 	 * Note that all uploadable values are wrapped with {@link jodd.http.up.Uploadable}.
 	 */
-	public Map<String, Object[]> form() {
+	public HttpMultiMap<?> form() {
 		return form;
 	}
 
@@ -586,17 +604,14 @@ public abstract class HttpBase<T> {
 		if (multipart) {
 			return true;
 		}
-		for (Object[] values : form.values()) {
-			if (values == null) {
-				continue;
-			}
 
-			for (Object value : values) {
-				if (value instanceof Uploadable) {
-					return true;
-				}
+		for (Map.Entry<String, ?> entry : form) {
+			Object value = entry.getValue();
+			if (value instanceof Uploadable) {
+				return true;
 			}
 		}
+
 	    return false;
 	}
 
@@ -610,12 +625,7 @@ public abstract class HttpBase<T> {
 		}
 
 		if (!isFormMultipart()) {
-			// determine form encoding
-			String formEncoding = charset;
-
-			if (formEncoding == null) {
-				formEncoding = this.formEncoding;
-			}
+			String formEncoding = resolveFormEncoding();
 
 			// encode
 			String formQueryString = HttpUtil.buildQuery(form, formEncoding);
@@ -627,56 +637,65 @@ public abstract class HttpBase<T> {
 			return buffer;
 		}
 
-		String boundary = StringUtil.repeat('-', 10) + RandomStringUtil.randomAlphaNumeric(10);
+		String boundary = StringUtil.repeat('-', 10) + RandomString.getInstance().randomAlphaNumeric(10);
 
-		for (Map.Entry<String, Object[]> entry : form.entrySet()) {
+		for (Map.Entry<String, ?> entry : form) {
 
 			buffer.append("--");
 			buffer.append(boundary);
 			buffer.append(CRLF);
 
 			String name = entry.getKey();
-			Object[] values = entry.getValue();
+			Object value = entry.getValue();
 
-			for (Object value : values) {
-				if (value instanceof String) {
-					String string = (String) value;
-					buffer.append("Content-Disposition: form-data; name=\"").append(name).append('"').append(CRLF);
-					buffer.append(CRLF);
-					buffer.append(string);
-				}
-				else if (value instanceof Uploadable) {
-					Uploadable uploadable = (Uploadable) value;
-
-					String fileName = uploadable.getFileName();
-					if (fileName == null) {
-						fileName = name;
-					}
-
-					buffer.append("Content-Disposition: form-data; name=\"").append(name);
-					buffer.append("\"; filename=\"").append(fileName).append('"').append(CRLF);
-
-					String mimeType = uploadable.getMimeType();
-					if (mimeType == null) {
-						mimeType = MimeTypes.getMimeType(FileNameUtil.getExtension(fileName));
-					}
-					buffer.append(HEADER_CONTENT_TYPE).append(": ").append(mimeType).append(CRLF);
-
-					buffer.append("Content-Transfer-Encoding: binary").append(CRLF);
-					buffer.append(CRLF);
-
-					buffer.append(uploadable);
-
-					//byte[] bytes = uploadable.getBytes();
-					//for (byte b : bytes) {
-						//buffer.append(CharUtil.toChar(b));
-					//}
-				} else {
-					// should never happened!
-					throw new HttpException("Unsupported type");
-				}
+			if (value instanceof String) {
+				String string = (String) value;
+				buffer.append("Content-Disposition: form-data; name=\"").append(name).append('"').append(CRLF);
 				buffer.append(CRLF);
+
+				String formEncoding = resolveFormEncoding();
+
+				String utf8String = StringUtil.convertCharset(
+					string, formEncoding, StringPool.ISO_8859_1);
+
+				buffer.append(utf8String);
 			}
+			else if (value instanceof Uploadable) {
+				Uploadable uploadable = (Uploadable) value;
+
+				String fileName = uploadable.getFileName();
+				if (fileName == null) {
+					fileName = name;
+				} else {
+					String formEncoding = resolveFormEncoding();
+
+					fileName = StringUtil.convertCharset(
+						fileName, formEncoding, StringPool.ISO_8859_1);
+				}
+
+				buffer.append("Content-Disposition: form-data; name=\"").append(name);
+				buffer.append("\"; filename=\"").append(fileName).append('"').append(CRLF);
+
+				String mimeType = uploadable.getMimeType();
+				if (mimeType == null) {
+					mimeType = MimeTypes.getMimeType(FileNameUtil.getExtension(fileName));
+				}
+				buffer.append(HEADER_CONTENT_TYPE).append(": ").append(mimeType).append(CRLF);
+
+				buffer.append("Content-Transfer-Encoding: binary").append(CRLF);
+				buffer.append(CRLF);
+
+				buffer.append(uploadable);
+
+				//byte[] bytes = uploadable.getBytes();
+				//for (byte b : bytes) {
+					//buffer.append(CharUtil.toChar(b));
+				//}
+			} else {
+				// should never happened!
+				throw new HttpException("Unsupported type");
+			}
+			buffer.append(CRLF);
 		}
 
 		buffer.append("--").append(boundary).append("--");
@@ -687,6 +706,19 @@ public abstract class HttpBase<T> {
 		contentLength(buffer.size());
 
 		return buffer;
+	}
+
+	/**
+	 * Resolves form encodings.
+	 */
+	protected String resolveFormEncoding() {
+		// determine form encoding
+		String formEncoding = charset;
+
+		if (formEncoding == null) {
+			formEncoding = this.formEncoding;
+		}
+		return formEncoding;
 	}
 
 	// ---------------------------------------------------------------- buffer
@@ -794,11 +826,20 @@ public abstract class HttpBase<T> {
 	protected void readBody(BufferedReader reader) {
 		String bodyString = null;
 
+		// first determine if chunked encoding is specified
+		boolean isChunked = false;
+
+		String transferEncoding = header("Transfer-Encoding");
+		if (transferEncoding != null && transferEncoding.equalsIgnoreCase("chunked")) {
+			isChunked = true;
+		}
+
+
 		// content length
 		String contentLen = contentLength();
 		int contentLenValue = -1;
 
-		if (contentLen != null) {
+		if (contentLen != null && !isChunked) {
 			contentLenValue = Integer.parseInt(contentLen);
 
 			if (contentLenValue > 0) {
@@ -815,8 +856,7 @@ public abstract class HttpBase<T> {
 		}
 
 		// chunked encoding
-		String transferEncoding = header("Transfer-Encoding");
-		if (transferEncoding != null && transferEncoding.equalsIgnoreCase("chunked")) {
+		if (isChunked) {
 
 			FastCharArrayWriter fastCharArrayWriter = new FastCharArrayWriter();
 			try {
@@ -874,7 +914,7 @@ public abstract class HttpBase<T> {
 		}
 
 		if (mediaType.equals("multipart/form-data")) {
-			form = HttpValuesMap.ofObjects();
+			form = HttpMultiMap.newCaseInsensitveMap();
 
 			MultipartStreamParser multipartParser = new MultipartStreamParser();
 
@@ -889,20 +929,18 @@ public abstract class HttpBase<T> {
 			// string parameters
 			for (String paramName : multipartParser.getParameterNames()) {
 				String[] values = multipartParser.getParameterValues(paramName);
-				if (values.length == 1) {
-					form.add(paramName, values[0]);
-				} else {
-					form.put(paramName, values);
+
+				for (String value : values) {
+					((HttpMultiMap<Object>)form).add(paramName, value);
 				}
 			}
 
 			// file parameters
 			for (String paramName : multipartParser.getFileParameterNames()) {
-				FileUpload[] values = multipartParser.getFiles(paramName);
-				if (values.length == 1) {
-					form.add(paramName, values[0]);
-				} else {
-					form.put(paramName, values);
+				FileUpload[] uploads = multipartParser.getFiles(paramName);
+
+				for (FileUpload upload : uploads) {
+					((HttpMultiMap<Object>)form).add(paramName, upload);
 				}
 			}
 

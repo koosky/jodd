@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.bean;
 
@@ -818,10 +841,10 @@ public class BeanUtilTest {
 
 	@Test
 	public void testMap2() {
-		Map<String, String> m = new HashMap<String, String>();
+		Map<String, String> m = new HashMap<>();
 		m.put("dd.dd", "value");
 		m.put("dd", "value2");
-		Map<String, Object> m2 = new HashMap<String, Object>();
+		Map<String, Object> m2 = new HashMap<>();
 		m2.put("map", m);
 		FooBean fb = new FooBean();
 		fb.setFooMap(m);
@@ -1248,12 +1271,11 @@ public class BeanUtilTest {
 		beanUtilBean.setSimpleProperty(fb, "fooString", "test", false);
 		assertEquals("test", fb.getFooString());
 		assertEquals("test", beanUtilBean.getSimpleProperty(fb, "fooString", false));
-		assertEquals("test", beanUtilBean.getProperty(fb, "*this.fooString"));
+		assertEquals("test", beanUtilBean.getProperty(fb, "fooString"));
 
 		FooBean4 fb4 = new FooBean4();
 		assertEquals("xxx", beanUtilBean.getProperty(fb4, "data[0].bbean.abean.fooProp"));
-		assertEquals("xxx", beanUtilBean.getProperty(fb4, "*this.data.*this[0].*this.bbean.abean.fooProp"));
-		assertEquals("xxx", beanUtilBean.getProperty(fb4, "data[0].bbean.abean.fooProp"));
+		assertEquals("xxx", beanUtilBean.getProperty(fb4, "data.[0].bbean.abean.fooProp"));
 
 
 		assertEquals("foo", beanUtilBean.extractThisReference("foo.aaa"));
@@ -1315,7 +1337,6 @@ public class BeanUtilTest {
 
 		assertEquals("data", props.getProperty("ldap"));
 
-		BeanUtil.setProperty(props, "*this[ldap.auth.enabled]", "data2");
 		BeanUtil.setProperty(props, "[ldap.auth.enabled]", "data2");
 
 		assertEquals("data", props.getProperty("ldap"));
@@ -1329,7 +1350,7 @@ public class BeanUtilTest {
 		BeanUtil.setPropertyForced(map, "[aaa.bbb].fooMap[xxx.ccc]", "zzzz");
 		assertEquals("zzzz", ((FooBean) map.get("aaa.bbb")).getFooMap().get("xxx.ccc"));
 
-		BeanUtil.setPropertyForced(fb, ".fooint", "123");
+		BeanUtil.setPropertyForced(fb, "fooint", "123");
 		assertEquals(123, fb.getFooint());
 
 		try {
@@ -1344,10 +1365,9 @@ public class BeanUtilTest {
 		} catch (Exception ex) {
 		}
 
-		BeanUtil.setPropertyForced(map, ".[aaa.bbb].fooMap..[eee.ccc]", "zzzz");
+		BeanUtil.setPropertyForced(map, "[aaa.bbb].fooMap.[eee.ccc]", "zzzz");
 		// forced works because *this is a map!
-		assertEquals("zzzz", BeanUtil.getProperty(map, ".[aaa.bbb].fooMap..[eee.ccc]"));
-		assertEquals("zzzz", BeanUtil.getProperty(map, "*this.[aaa.bbb].fooMap..[eee.ccc]"));
+		assertEquals("zzzz", BeanUtil.getProperty(map, "[aaa.bbb].fooMap.[eee.ccc]"));
 	}
 
 	@Test
@@ -1409,6 +1429,23 @@ public class BeanUtilTest {
 		assertNotNull(mixBean.getData5());
 		assertEquals(5, mixBean.getData5().size());
 		assertEquals(1, mixBean.getData5().get(0).intValue());
+	}
+
+	@Test
+	public void testMapWithKeyWithADot() {
+		Map innerMap = new HashMap();
+		innerMap.put("zzz.xxx", "hey");
+
+		Map map = new HashMap();
+		map.put("foo.bar", innerMap);
+
+		Object value = BeanUtil.getProperty(map, "[foo.bar]");
+		assertNotNull(value);
+
+		value = BeanUtil.getProperty(map, "[foo.bar].[zzz.xxx]");
+		assertNotNull(value);
+		assertEquals("hey", value.toString());
+
 	}
 
 }

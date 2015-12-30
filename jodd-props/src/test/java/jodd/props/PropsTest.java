@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.props;
 
@@ -37,7 +60,7 @@ public class PropsTest extends BasePropsTest {
 		assertNull(p.getValue("non existing"));
 
 		Properties prop = new Properties();
-		p.extractBaseProps(prop);
+		p.extractProps(prop, null);
 		assertEquals("1937{c}", prop.getProperty("year"));
 		assertEquals("49.5", prop.getProperty("doc.weight"));
 		assertEquals("Čađavi Žar utf8", prop.getProperty("comment"));
@@ -80,7 +103,7 @@ public class PropsTest extends BasePropsTest {
 		assertEquals("192.168.1.102", p.getValue("db.url", "deploy"));
 
 		Properties prop = new Properties();
-		p.extractBaseProps(prop);
+		p.extractProps(prop, null);
 		assertEquals("one", prop.getProperty("foo"));
 
 		prop.clear();
@@ -835,6 +858,17 @@ public class PropsTest extends BasePropsTest {
 		props.load(data);
 
 		assertEquals("jodd is Good", props.getValue("user.name"));
+	}
+
+	@Test
+	public void testAdditionalEquals() {
+		String data =
+				"account-dn = cn=accountname,ou=users,o=organization\n";
+
+		Props props = new Props();
+		props.load(data);
+
+		assertEquals("cn=accountname,ou=users,o=organization", props.getValue("account-dn"));
 	}
 
 }

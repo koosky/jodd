@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.io;
 
@@ -126,6 +149,20 @@ public class FileUtil {
 
 		return new File(URI.create(
 				path.substring(0, path.lastIndexOf("!/"))));
+	}
+
+	/**
+	 * Returns <code>true</code> if file exists.
+	 */
+	public static boolean isExistingFile(File file) {
+		return file.exists() && file.isFile();
+	}
+
+	/**
+	 * Returns <code>true</code> if folder exists.
+	 */
+	public static boolean isExistingFolder(File folder) {
+		return folder.exists() && folder.isDirectory();
 	}
 
 	// ---------------------------------------------------------------- mkdirs
@@ -896,7 +933,7 @@ public class FileUtil {
 		if (file.isFile() == false) {
 			throw new IOException(MSG_NOT_A_FILE + file);
 		}
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 
 		InputStream in = null;
 		try {
@@ -925,6 +962,9 @@ public class FileUtil {
 	}
 
 	public static byte[] readBytes(File file) throws IOException {
+		return readBytes(file, -1);
+	}
+	public static byte[] readBytes(File file, int fixedLength) throws IOException {
 		if (file.exists() == false) {
 			throw new FileNotFoundException(MSG_NOT_FOUND + file);
 		}
@@ -934,6 +974,10 @@ public class FileUtil {
 		long len = file.length();
 		if (len >= Integer.MAX_VALUE) {
 			throw new IOException("File is larger then max array size");
+		}
+
+		if (fixedLength > -1 && fixedLength < len) {
+			len = fixedLength;
 		}
 
 		byte[] bytes = new byte[(int) len];
@@ -1405,4 +1449,18 @@ public class FileUtil {
 		return StringUtil.toHexString(digest);
 	}
 
+	/**
+	 * Checks the start of the file for ASCII control characters
+	 */
+	public static boolean isBinary(final File file) throws IOException {
+		byte[] bytes = readBytes(file, 128);
+
+		for (byte b : bytes) {
+			if (b < 32) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

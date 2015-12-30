@@ -1,7 +1,31 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.bean;
 
+import jodd.exception.ExceptionUtil;
 import jodd.introspector.Getter;
 import jodd.introspector.Setter;
 import jodd.util.ReflectUtil;
@@ -104,8 +128,12 @@ public class BeanUtilBean extends BeanUtilUtil {
 
 	protected Object getSimpleProperty(BeanProperty bp) {
 
-		if ((bp.name.length() == 0 && bp.first) || bp.name.equals(JoddBean.thisRef)) {
-			return bp.bean;
+		if (bp.name.length() == 0) {
+			if (bp.indexString != null) {
+				// index string exist, but property name is missing
+				return bp.bean;
+			}
+			throw new BeanException("Invalid property", bp);
 		}
 
 		Getter getter = bp.getGetter(bp.declared);
@@ -241,12 +269,20 @@ public class BeanUtilBean extends BeanUtilUtil {
 	 * If forced, missing bean will be created if possible.
 	 */
 	protected Object getIndexProperty(BeanProperty bp) {
-		String indexString = extractIndex(bp);
+		bp.indexString = extractIndex(bp);
 
+		Object value = _getIndexProperty(bp);
+
+		bp.indexString = null;
+
+		return value;
+	}
+
+	private Object _getIndexProperty(BeanProperty bp) {
 		Object resultBean = getSimpleProperty(bp);
 		Getter getter = bp.getGetter(bp.declared);
 
-		if (indexString == null) {
+		if (bp.indexString == null) {
 			return resultBean;	// no index, just simple bean
 		}
 		if (resultBean == null) {
@@ -258,7 +294,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 
 		// try: property[index]
 		if (resultBean.getClass().isArray() == true) {
-			int index = parseInt(indexString, bp);
+			int index = parseInt(bp.indexString, bp);
 			if (bp.forced == true) {
 				return arrayForcedGet(bp, resultBean, index);
 			} else {
@@ -268,7 +304,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 
 		// try: list.get(index)
 		if (resultBean instanceof List) {
-			int index = parseInt(indexString, bp);
+			int index = parseInt(bp.indexString, bp);
 			List list = (List) resultBean;
 			if (bp.forced == false) {
 				return list.get(index);
@@ -300,7 +336,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 		// try: map.get('index')
 		if (resultBean instanceof Map) {
 			Map map = (Map) resultBean;
-			Object key = convertIndexToMapKey(getter, indexString);
+			Object key = convertIndexToMapKey(getter, bp.indexString);
 
 			if (bp.forced == false) {
 				return map.get(key);
@@ -318,7 +354,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 						if (bp.silent) {
 							return null;
 						}
-						throw new BeanException("Invalid map element: " + bp.name + '[' + indexString + ']', bp, ex);
+						throw new BeanException("Invalid map element: " + bp.name + '[' + bp.indexString + ']', bp, ex);
 					}
 
 					//noinspection unchecked
@@ -342,11 +378,17 @@ public class BeanUtilBean extends BeanUtilUtil {
 	/**
 	 * Sets indexed or regular properties (no nested!).
 	 */
-	@SuppressWarnings({"unchecked"})
 	protected void setIndexProperty(BeanProperty bp, Object value) {
-		String indexString = extractIndex(bp);
+		bp.indexString = extractIndex(bp);
 
-		if (indexString == null) {
+		_setIndexProperty(bp, value);
+
+		bp.indexString = null;
+	}
+
+	@SuppressWarnings({"unchecked"})
+	private void _setIndexProperty(BeanProperty bp, Object value) {
+		if (bp.indexString == null) {
 			setSimpleProperty(bp, value);
 			return;
 		}
@@ -364,7 +406,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 
 		// inner bean found
 		if (nextBean.getClass().isArray() == true) {
-			int index = parseInt(indexString, bp);
+			int index = parseInt(bp.indexString, bp);
 			if (bp.forced == true) {
 				arrayForcedSet(bp, nextBean, index, value);
 			} else {
@@ -374,7 +416,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 		}
 
 		if (nextBean instanceof List) {
-			int index = parseInt(indexString, bp);
+			int index = parseInt(bp.indexString, bp);
 			Class listComponentType = extractGenericComponentType(getter);
 			if (listComponentType != Object.class) {
 				value = convertType(value, listComponentType);
@@ -388,7 +430,7 @@ public class BeanUtilBean extends BeanUtilUtil {
 		}
 		if (nextBean instanceof Map) {
 			Map map = (Map) nextBean;
-			Object key = convertIndexToMapKey(getter, indexString);
+			Object key = convertIndexToMapKey(getter, bp.indexString);
 
 			Class mapComponentType = extractGenericComponentType(getter);
 			if (mapComponentType != Object.class) {
@@ -407,6 +449,29 @@ public class BeanUtilBean extends BeanUtilUtil {
 
 
 	// ---------------------------------------------------------------- SET
+
+	/**
+	 * Sets Java Bean property.
+	 * @param bean Java POJO bean or a Map
+	 * @param name property name
+	 * @param value property value
+	 * @param declared consider declared properties as well
+	 * @param forced force creation of missing values
+	 * @param silent silent mode, no exception is thrown
+	 */
+	public void setProperty(Object bean, String name, Object value, boolean declared, boolean forced, boolean silent) {
+		BeanProperty beanProperty = new BeanProperty(bean, name, declared, forced);
+
+		try {
+			resolveNestedProperties(beanProperty);
+			setIndexProperty(beanProperty, value);
+		} catch (Exception ex) {
+			if (!silent) {
+				ExceptionUtil.throwException(ex);
+			}
+		}
+
+	}
 
 	/**
 	 * Sets Java Bean property.

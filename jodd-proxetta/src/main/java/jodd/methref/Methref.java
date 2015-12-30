@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.methref;
 
@@ -9,39 +32,42 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Super tool for getting method references in compile-time.
+ * Super tool for getting method references (names) in compile-time.
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class Methref<C> {
 
 	private static final MethrefProxetta proxetta = new MethrefProxetta();
-	private static final Map<Class, Object> cache = new WeakHashMap<Class, Object>();
+	private static final Map<Class, Class> cache = new WeakHashMap<>();
 
 	private final C instance;
 
 	/**
 	 * Creates new proxified instance of target.
-	 * Proxy instances are cached. If given target is also
+	 * Proxy classes are cached. If given target is also
 	 * proxified, it's real target will be used.
 	 */
 	@SuppressWarnings({"unchecked"})
 	public Methref(Class<C> target) {
 		target = ProxettaUtil.getTargetClass(target);
 
-		Object proxy = cache.get(target);
+		Class proxyClass = cache.get(target);
 
-		if (proxy == null) {
-			Class<C> proxifiedTarget = proxetta.defineProxy(target);
+		if (proxyClass == null) {
+			proxyClass = proxetta.defineProxy(target);
 
-			try {
-				proxy = proxifiedTarget.newInstance();
-				cache.put(target, proxy);
-			} catch (Exception ex) {
-				throw new MethrefException(ex);
-			}
+			cache.put(target, proxyClass);
 		}
 
-        this.instance = (C) proxy;
+		C proxy;
+
+		try {
+			proxy = (C) proxyClass.newInstance();
+		} catch (Exception ex) {
+			throw new MethrefException(ex);
+		}
+
+        this.instance = proxy;
 	}
 
 	// ---------------------------------------------------------------- use
@@ -50,14 +76,14 @@ public class Methref<C> {
 	 * Static factory, for convenient use.
 	 */
 	public static <T> Methref<T> on(Class<T> target) {
-		return new Methref<T>(target);
+		return new Methref<>(target);
 	}
 
 	/**
 	 * Static factory that immediately returns {@link #to() method picker}.
 	 */
 	public static <T> T onto(Class<T> target) {
-		return new Methref<T>(target).to();
+		return new Methref<>(target).to();
 	}
 
 	/**
@@ -127,6 +153,9 @@ public class Methref<C> {
 			}
 			return name.toString();
 		} catch (Exception ex) {
+			if (ex instanceof MethrefException) {
+				throw ((MethrefException) ex);
+			}
 			throw new MethrefException("Methref field not found", ex);
 		}
 	}

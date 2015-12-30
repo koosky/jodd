@@ -1,9 +1,33 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.json;
 
 import jodd.json.meta.JSON;
 import jodd.json.meta.JsonAnnotationManager;
+import jodd.json.model.State;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -158,8 +182,8 @@ public class JsonSerializerTest {
 	}
 
 	public static class InBean {
-		HashMap<String, Object> params = new HashMap<String, Object>();
-		ArrayList<String> names = new ArrayList<String>();
+		HashMap<String, Object> params = new HashMap<>();
+		ArrayList<String> names = new ArrayList<>();
 
 		public HashMap<String, Object> getParams() {
 			return params;
@@ -180,13 +204,13 @@ public class JsonSerializerTest {
 
 	@Test
 	public void testInMapVsInBeanbsInList() {
-		HashMap<String, Object> params = new HashMap<String, Object>();
+		HashMap<String, Object> params = new HashMap<>();
 		params.put("myid", Integer.valueOf(4343));
-		ArrayList<String> names = new ArrayList<String>();
+		ArrayList<String> names = new ArrayList<>();
 		names.add("veqna");
 
 		// in map
-		LinkedHashMap<String, Object> rootMap = new LinkedHashMap<String, Object>();
+		LinkedHashMap<String, Object> rootMap = new LinkedHashMap<>();
 		rootMap.put("params", params);
 		rootMap.put("names", names);
 
@@ -393,24 +417,24 @@ public class JsonSerializerTest {
 
 	@Test
 	public void testCuriousModeOfSerialization() {
-		Map<String, Object> map = new HashMap<String, Object>();
+		Map<String, Object> map = new HashMap<>();
 
-		List<Integer> numbers = new ArrayList<Integer>();
+		List<Integer> numbers = new ArrayList<>();
 		numbers.add(Integer.valueOf(8));
 		numbers.add(Integer.valueOf(4));
 		numbers.add(Integer.valueOf(2));
 		map.put("array", numbers);
 		map.put("value", "BIG");
 
-		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> list = new ArrayList<>();
 		map.put("list", list);
 
-		Map<String, Object> val = new HashMap<String, Object>();
+		Map<String, Object> val = new HashMap<>();
 		val.put("name", "Root");
 		val.put("value", "Hack");
 		list.add(val);
 
-		val = new HashMap<String, Object>();
+		val = new HashMap<>();
 		val.put("name", "John");
 		val.put("value", "Protected");
 		list.add(val);
@@ -455,10 +479,10 @@ public class JsonSerializerTest {
 
 	@Test
 	public void testCircularDependenciesMap() {
-		Map<String, Object> white = new HashMap<String, Object>();
+		Map<String, Object> white = new HashMap<>();
 		white.put("intensity", Integer.valueOf(20));
 
-		Map<String, Object> black = new HashMap<String, Object>();
+		Map<String, Object> black = new HashMap<>();
 		black.put("darkness", Integer.valueOf(80));
 
 		black.put("white", white);
@@ -489,6 +513,30 @@ public class JsonSerializerTest {
 		String json = new JsonSerializer().serialize(whiteBars);
 
 		assertEquals("[{\"sum\":1}]", json);
+	}
+
+	@Test
+	public void testExcludingNulls() {
+		Map<String, Object> map = new HashMap<>();
+		map.put("one", null);
+
+		String json = new JsonSerializer().serialize(map);
+		assertEquals("{\"one\":null}", json);
+
+		json = new JsonSerializer().excludeNulls(true).serialize(map);
+		assertEquals("{}", json);
+
+		State state = new State();
+		map.put("one", state);
+		json = new JsonSerializer().serialize(map);
+		assertTrue(json.startsWith("{\"one\":"));
+
+		json = new JsonSerializer().excludeNulls(true).serialize(map);
+		assertEquals("{\"one\":{}}", json);
+
+		state.setId(1);
+		json = new JsonSerializer().excludeNulls(true).serialize(map);
+		assertEquals("{\"one\":{\"id\":1}}", json);
 	}
 
 

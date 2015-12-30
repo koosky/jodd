@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.props;
 
@@ -53,12 +76,12 @@ public class PropsData implements Cloneable {
 
 	@Override
 	public PropsData clone() {
-		final HashMap<String, PropsEntry> newBase = new HashMap<String, PropsEntry>();
-		final HashMap<String, Map<String, PropsEntry>> newProfiles = new HashMap<String, Map<String, PropsEntry>>();
+		final HashMap<String, PropsEntry> newBase = new HashMap<>();
+		final HashMap<String, Map<String, PropsEntry>> newProfiles = new HashMap<>();
 
 		newBase.putAll(baseProperties);
 		for (final Map.Entry<String, Map<String, PropsEntry>> entry : profileProperties.entrySet()) {
-			final Map<String, PropsEntry> map = new HashMap<String, PropsEntry>(entry.getValue().size());
+			final Map<String, PropsEntry> map = new HashMap<>(entry.getValue().size());
 			map.putAll(entry.getValue());
 			newProfiles.put(entry.getKey(), map);
 		}
@@ -127,7 +150,7 @@ public class PropsData implements Cloneable {
 	 * that easy on execution.
 	 */
 	public int countProfileProperties() {
-		final HashSet<String> profileKeys = new HashSet<String>();
+		final HashSet<String> profileKeys = new HashSet<>();
 
 		for (final Map<String, PropsEntry> map : profileProperties.values()) {
 			for (final String key : map.keySet()) {
@@ -145,7 +168,7 @@ public class PropsData implements Cloneable {
 	public void putProfileProperty(final String key, final String value, final String profile, final boolean append) {
 		Map<String, PropsEntry> map = profileProperties.get(profile);
 		if (map == null) {
-			map = new HashMap<String, PropsEntry>();
+			map = new HashMap<>();
 			profileProperties.put(profile, map);
 		}
 		put(profile, map, key, value, append);
@@ -264,15 +287,26 @@ public class PropsData implements Cloneable {
 	// ---------------------------------------------------------------- extract
 
 	/**
-	 * Extract props to target map.
+	 * Extracts props to target map. This is all-in-one method, that does many things at once.
 	 */
-	public void extract(final Map target, final String[] profiles, final String[] wildcardPatterns) {
+	public Map extract(Map target, final String[] profiles, final String[] wildcardPatterns, String prefix) {
+		if (target == null) {
+			target = new HashMap();
+		}
+
+		// make sure prefix ends with a dot
+		if (prefix != null) {
+			if (StringUtil.endsWithChar(prefix, '.') == false) {
+				prefix += StringPool.DOT;
+			}
+		}
+
 		if (profiles != null) {
 			for (String profile : profiles) {
 				while (true) {
 					final Map<String, PropsEntry> map = this.profileProperties.get(profile);
 					if (map != null) {
-						extractMap(target, map, profiles, wildcardPatterns);
+						extractMap(target, map, profiles, wildcardPatterns, prefix);
 					}
 
 					final int ndx = profile.indexOf('.');
@@ -283,13 +317,23 @@ public class PropsData implements Cloneable {
 				}
 			}
 		}
-		extractMap(target, this.baseProperties, profiles, wildcardPatterns);
+
+		extractMap(target, this.baseProperties, profiles, wildcardPatterns, prefix);
+
+		return target;
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void extractMap(final Map target, final Map<String, PropsEntry> map, final String[] profiles, final String[] wildcardPatterns) {
+	protected void extractMap(
+			final Map target,
+			final Map<String, PropsEntry> map,
+			final String[] profiles,
+			final String[] wildcardPatterns,
+			final String prefix
+			) {
+
 		for (Map.Entry<String, PropsEntry> entry : map.entrySet()) {
-			final String key = entry.getKey();
+			String key = entry.getKey();
 
 			if (wildcardPatterns != null) {
 				if (Wildcard.matchOne(key, wildcardPatterns) == -1) {
@@ -297,6 +341,15 @@ public class PropsData implements Cloneable {
 				}
 			}
 
+			// shorten the key
+			if (prefix != null) {
+				if (!key.startsWith(prefix)) {
+					continue;
+				}
+				key = key.substring(prefix.length());
+			}
+
+			// only append if target DOES NOT contain the key
 			if (!target.containsKey(key)) {
 				target.put(key, entry.getValue().getValue(profiles));
 			}

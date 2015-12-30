@@ -1,18 +1,44 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.http;
 
 import jodd.io.StreamUtil;
 import jodd.util.StringPool;
 import jodd.util.StringUtil;
+import org.apache.catalina.core.ApplicationPart;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +58,8 @@ public class EchoServlet extends HttpServlet {
 		public String body;
 		public Map<String, String> header;
 		public Map<String, String> params;
+		public Map<String, String> parts;
+		public Map<String, String> fileNames;
 	}
 
 	@Override
@@ -78,7 +106,7 @@ public class EchoServlet extends HttpServlet {
 
 	protected Map<String, String> copyHeaders(HttpServletRequest req) {
 		Enumeration enumeration = req.getHeaderNames();
-		Map<String, String> header = new HashMap<String, String>();
+		Map<String, String> header = new HashMap<>();
 
 		while (enumeration.hasMoreElements()) {
 			String name = enumeration.nextElement().toString();
@@ -93,7 +121,7 @@ public class EchoServlet extends HttpServlet {
 		String charset = req.getParameter("enc");
 
 		Enumeration enumeration = req.getParameterNames();
-		Map<String, String> params = new HashMap<String, String>();
+		Map<String, String> params = new HashMap<>();
 
 		while (enumeration.hasMoreElements()) {
 			String name = enumeration.nextElement().toString();
@@ -105,6 +133,57 @@ public class EchoServlet extends HttpServlet {
 		}
 
 		return params;
+	}
+
+	protected Map<String, String> copyParts(HttpServletRequest req) {
+		Map<String, String> parts = new HashMap<>();
+		if (req.getContentType() != null && !req.getContentType().toLowerCase().contains("multipart/form-data")) {
+			return parts;
+		}
+
+		String enc = "UTF-8";
+
+		try {
+			Collection<Part> prs = req.getParts();
+
+			for (Part p : prs) {
+				parts.put(p.getName(), new String(StreamUtil.readBytes(p.getInputStream()), enc));
+			}
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		catch (ServletException e) {
+			e.printStackTrace();
+		}
+
+		return parts;
+	}
+
+	protected Map<String, String> copyFileName(HttpServletRequest req) {
+		Map<String, String> parts = new HashMap<>();
+		if (req.getContentType() != null && !req.getContentType().toLowerCase().contains("multipart/form-data")) {
+			return parts;
+		}
+
+		try {
+			Collection<Part> prs = req.getParts();
+
+			for (Part p : prs) {
+				if (p instanceof ApplicationPart) {
+					ApplicationPart ap = (ApplicationPart) p;
+					parts.put(p.getName(), ap.getSubmittedFileName());
+				}
+			}
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		catch (ServletException e) {
+			e.printStackTrace();
+		}
+
+		return parts;
 	}
 
 }

@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.json;
 
@@ -31,13 +54,14 @@ public class JsonSerializer {
 	protected boolean deep = JoddJson.deepSerialization;
 	protected Class[] excludedTypes = null;
 	protected String[] excludedTypeNames = null;
+	protected boolean excludeNulls = false;
 
 	/**
 	 * Defines custom {@link jodd.json.TypeJsonSerializer} for given path.
 	 */
 	public JsonSerializer use(String pathString, TypeJsonSerializer typeJsonSerializer) {
 		if (pathSerializersMap == null) {
-			pathSerializersMap = new HashMap<Path, TypeJsonSerializer>();
+			pathSerializersMap = new HashMap<>();
 		}
 
 		pathSerializersMap.put(Path.parse(pathString), typeJsonSerializer);
@@ -164,13 +188,21 @@ public class JsonSerializer {
 		return this;
 	}
 
+	/**
+	 * Excludes <code>null</code> values while serializing.
+	 */
+	public JsonSerializer excludeNulls(boolean excludeNulls) {
+		this.excludeNulls = excludeNulls;
+		return this;
+	}
+
 	// ---------------------------------------------------------------- serialize
 
 	/**
 	 * Serializes object into provided appendable.
 	 */
 	public void serialize(Object source, Appendable target) {
-		JsonContext jsonContext = new JsonContext(this, target);
+		JsonContext jsonContext = new JsonContext(this, target, excludeNulls);
 
 		jsonContext.serialize(source);
 	}
@@ -192,6 +224,6 @@ public class JsonSerializer {
 	 * Creates new JSON context.
 	 */
 	public JsonContext createJsonContext(Appendable appendable) {
-		return new JsonContext(this, appendable);
+		return new JsonContext(this, appendable, excludeNulls);
 	}
 }

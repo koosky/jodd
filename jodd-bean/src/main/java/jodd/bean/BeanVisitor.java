@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.bean;
 
@@ -14,6 +37,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
+import static jodd.util.StringPool.LEFT_SQ_BRACKET;
+import static jodd.util.StringPool.RIGHT_SQ_BRACKET;
+
 /**
  * Visitor for bean properties. It extracts properties names
  * from the source bean and then visits one by one.
@@ -27,7 +53,7 @@ public abstract class BeanVisitor implements InExRuleMatcher<String, String> {
 	/**
 	 * Include/exclude rules.
 	 */
-	protected InExRules<String, String> rules = new InExRules<String, String>(this);
+	protected InExRules<String, String> rules = new InExRules<>(this);
 	/**
 	 * Flag for enabling declared properties, or just public ones.
 	 */
@@ -44,6 +70,10 @@ public abstract class BeanVisitor implements InExRuleMatcher<String, String> {
 	 * Initial matching mode.
 	 */
 	protected boolean blacklist = true;
+	/**
+	 * Indicates the the source is a Map.
+	 */
+	protected boolean isSourceMap = false;
 
 	// ---------------------------------------------------------------- util
 
@@ -55,7 +85,7 @@ public abstract class BeanVisitor implements InExRuleMatcher<String, String> {
 
 		PropertyDescriptor[] propertyDescriptors = classDescriptor.getAllPropertyDescriptors();
 
-		ArrayList<String> names = new ArrayList<String>(propertyDescriptors.length);
+		ArrayList<String> names = new ArrayList<>(propertyDescriptors.length);
 
 		for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 			MethodDescriptor getter = propertyDescriptor.getReadMethodDescriptor();
@@ -117,10 +147,16 @@ public abstract class BeanVisitor implements InExRuleMatcher<String, String> {
 
 			Object value;
 
+			String propertyName = name;
+
+			if (isSourceMap) {
+				propertyName = LEFT_SQ_BRACKET + name + RIGHT_SQ_BRACKET;
+			}
+
 			if (declared) {
-				value = BeanUtil.getDeclaredProperty(source, name);
+				value = BeanUtil.getDeclaredProperty(source, propertyName);
 			} else {
-				value = BeanUtil.getProperty(source, name);
+				value = BeanUtil.getProperty(source, propertyName);
 			}
 
 			if (value == null && ignoreNullValues) {

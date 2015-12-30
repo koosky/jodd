@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.bean;
 
@@ -9,7 +32,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 public class BeanCopyTest {
@@ -216,6 +241,35 @@ public class BeanCopyTest {
 		assertEquals("213", s);
 		String[] sa = (String[]) BeanUtil.getProperty(dest, "fooStringA");
 		assertNull(sa);
+	}
+
+	@Test
+	public void testCopyProperties() {
+		Properties properties = new Properties();
+
+		properties.put("fooInteger", Integer.valueOf(1));
+		properties.put("fooint", Integer.valueOf(2));
+
+		FooBean fooBean = new FooBean();
+
+		assertEquals(0, fooBean.getFooint());
+
+		// copy to
+
+		BeanCopy.fromMap(properties).toBean(fooBean).copy();
+
+		assertEquals(1, fooBean.getFooInteger().intValue());
+		assertEquals(2, fooBean.getFooint());
+
+
+		// copy back
+
+		properties.clear();
+
+		BeanCopy.fromBean(fooBean).toMap(properties).copy();
+
+		assertEquals(1, properties.get("fooInteger"));
+		assertEquals(2, properties.get("fooint"));
 	}
 
 
@@ -521,6 +575,84 @@ public class BeanCopyTest {
 		assertEquals("cow", map.get("name"));
 		assertEquals("7", map.get("value").toString());
 		assertEquals("100", map.get("nick").toString());
-
 	}
+
+	// ---------------------------------------------------------------- special test
+
+	public static class PropertyBean {
+		public int number;
+		public PropertyBean child;
+	}
+
+	@Test
+	public void testFromMapToBean() throws Exception {
+		Properties propsSource = new Properties();
+
+		propsSource.put("number", 42);
+		propsSource.put("child.number", 43);
+		propsSource.put("nonExistantNumber", 142);
+		propsSource.put("nonExistantChild.number", 143);
+
+		PropertyBean beanDest = new PropertyBean();
+
+		BeanCopy.fromMap(propsSource).toBean(beanDest).forced(true).copy();
+
+		assertThat(beanDest.number, is(42));
+		assertThat(beanDest.child.number, is(43));
+	}
+
+	@Test
+	public void testFromMapToMap() throws Exception {
+		Properties propsSource = new Properties();
+
+		propsSource.put("number", 42);
+		propsSource.put("child.number", 43);
+		propsSource.put("nonExistantNumber", 142);
+		propsSource.put("nonExistantChild.number", 143);
+
+		Properties propsDest = new Properties();
+
+		BeanCopy.fromMap(propsSource).toMap(propsDest).copy();
+
+		assertEquals(propsSource, propsDest);
+	}
+
+	@Test
+	public void testFromBeanToMap() throws Exception {
+		PropertyBean beanSource = new PropertyBean();
+
+		beanSource.number = 42;
+		beanSource.child = new PropertyBean();
+		beanSource.child.number = 43;
+
+		Properties propsDest = new Properties();
+
+		BeanCopy
+			.fromBean(beanSource)
+			.toMap(propsDest)
+			.includeFields(true)
+			.copy();
+
+
+		assertThat(propsDest.size(), is(2));
+		assertThat((Integer) propsDest.get("number"), is(42));
+		assertThat((Integer) BeanUtil.getProperty(propsDest, "child.number"), is(43));
+	}
+
+	@Test
+	public void testFromBeanToBean() throws Exception {
+		PropertyBean beanSource = new PropertyBean();
+
+		beanSource.number = 42;
+		beanSource.child = new PropertyBean();
+		beanSource.child.number = 43;
+
+		PropertyBean beanDest = new PropertyBean();
+
+		BeanCopy.fromBean(beanSource).toBean(beanDest).includeFields(true).copy();
+
+		assertThat(beanDest.number, is(42));
+		assertThat(beanDest.child.number, is(43));
+	}
+
 }

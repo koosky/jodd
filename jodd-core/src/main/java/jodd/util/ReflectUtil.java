@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.util;
 
@@ -277,7 +300,7 @@ public class ReflectUtil {
 	 * the returned array.
 	 */
 	public static Class[] resolveAllInterfaces(Class type) {
-		Set<Class> bag = new LinkedHashSet<Class>();
+		Set<Class> bag = new LinkedHashSet<>();
 		_resolveAllInterfaces(type, bag);
 
 		return bag.toArray(new Class[bag.size()]);
@@ -312,7 +335,7 @@ public class ReflectUtil {
 	 * class is not included in the list.
 	 */
 	public static Class[] resolveAllSuperclasses(Class type) {
-		List<Class> list = new ArrayList<Class>();
+		List<Class> list = new ArrayList<>();
 
 		while (true) {
 			type = type.getSuperclass();
@@ -343,7 +366,7 @@ public class ReflectUtil {
 	 */
 	public static Method[] getAccessibleMethods(Class clazz, Class limit) {
 		Package topPackage = clazz.getPackage();
-		List<Method> methodList = new ArrayList<Method>();
+		List<Method> methodList = new ArrayList<>();
 		int topPackageHash = topPackage == null ? 0 : topPackage.hashCode();
 		boolean top = true;
 		do {
@@ -412,7 +435,7 @@ public class ReflectUtil {
 
 	public static Field[] getAccessibleFields(Class clazz, Class limit) {
 		Package topPackage = clazz.getPackage();
-		List<Field> fieldList = new ArrayList<Field>();
+		List<Field> fieldList = new ArrayList<>();
 		int topPackageHash = topPackage == null ? 0 : topPackage.hashCode();
 		boolean top = true;
 		do {
@@ -479,7 +502,7 @@ public class ReflectUtil {
 	 * methods are returned.
 	 */
 	public static Method[] getSupportedMethods(Class clazz, Class limit) {
-		ArrayList<Method> supportedMethods = new ArrayList<Method>();
+		ArrayList<Method> supportedMethods = new ArrayList<>();
 		for (Class c = clazz; c != limit; c = c.getSuperclass()) {
 			Method[] methods = c.getDeclaredMethods();
 			for (Method method : methods) {
@@ -504,7 +527,7 @@ public class ReflectUtil {
 	}
 
 	public static Field[] getSupportedFields(Class clazz, Class limit) {
-		ArrayList<Field> supportedFields = new ArrayList<Field>();
+		ArrayList<Field> supportedFields = new ArrayList<>();
 		for (Class c = clazz; c != limit; c = c.getSuperclass()) {
 			Field[] fields = c.getDeclaredFields();
 			for (Field field : fields) {
@@ -858,31 +881,54 @@ public class ReflectUtil {
 	// ---------------------------------------------------------------- generics
 
 	/**
-	 * Returns single component type.
+	 * Returns single component type. Index is used when type consist of many
+	 * components. If negative, index will be calculated from the end of the
+	 * returned array. Returns <code>null</code> if component type
+	 * does not exist or if index is out of bounds.
+	 *
+	 * @see #getComponentTypes(java.lang.reflect.Type)
 	 */
-	public static Class getComponentType(Type type) {
-			return getComponentType(type, null);
-		}
+	public static Class getComponentType(Type type, int index) {
+		return getComponentType(type, null, index);
+	}
 
 	/**
-	 * Returns single component type.
+	 * Returns single component type for given type and implementation.
+	 * Index is used when type consist of many
+	 * components. If negative, index will be calculated from the end of the
+	 * returned array.  Returns <code>null</code> if component type
+	 * does not exist or if index is out of bounds.
+	 * <p>
+	 *
+	 * @see #getComponentTypes(java.lang.reflect.Type, Class)
 	 */
-	public static Class getComponentType(Type type, Class implClass) {
+	public static Class getComponentType(Type type, Class implClass, int index) {
 		Class[] componentTypes = getComponentTypes(type, implClass);
 		if (componentTypes == null) {
 			return null;
 		}
-		return componentTypes[componentTypes.length - 1];
+
+		if (index < 0) {
+			index += componentTypes.length;
+		}
+
+		if (index >= componentTypes.length) {
+			return null;
+		}
+
+		return componentTypes[index];
 	}
 
+	/**
+	 * @see #getComponentTypes(java.lang.reflect.Type, Class)
+	 */
 	public static Class[] getComponentTypes(Type type) {
 		return getComponentTypes(type, null);
 	}
 
 	/**
-	 * Returns the component types of the given type.
-	 * Returns <code>null</code> if given type does not have a single
-	 * component type. For example the following types all have the
+	 * Returns all component types of the given type.
+	 * For example the following types all have the
 	 * component-type MyClass:
 	 * <ul>
 	 * <li>MyClass[]</li>
@@ -898,7 +944,8 @@ public class ReflectUtil {
 			if (clazz.isArray()) {
 				return new Class[] {clazz.getComponentType()};
 			}
-		} else if (type instanceof ParameterizedType) {
+		}
+		else if (type instanceof ParameterizedType) {
 			ParameterizedType pt = (ParameterizedType) type;
 
 			Type[] generics = pt.getActualTypeArguments();
@@ -913,7 +960,8 @@ public class ReflectUtil {
 				types[i] = getRawType(generics[i], implClass);
 			}
 			return types;
-		} else if (type instanceof GenericArrayType) {
+		}
+		else if (type instanceof GenericArrayType) {
 			GenericArrayType gat = (GenericArrayType) type;
 
 			Class rawType = getRawType(gat.getGenericComponentType(), implClass);
@@ -927,20 +975,21 @@ public class ReflectUtil {
 	}
 
 	/**
+	 * Shortcut for <code>getComponentTypes(type.getGenericSuperclass())</code>.
+	 *
 	 * @see #getComponentTypes(java.lang.reflect.Type)
 	 */
 	public static Class[] getGenericSupertypes(Class type) {
 		return getComponentTypes(type.getGenericSuperclass());
 	}
 
-	public static Class getGenericSupertype(Class type) {
-		Class[] componentTypes = getComponentTypes(type.getGenericSuperclass());
-
-		if (componentTypes == null) {
-			return null;
-		}
-
-		return componentTypes[0];
+	/**
+	 * Shortcut for <code>getComponentType(type.getGenericSuperclass())</code>.
+	 *
+	 * @see #getComponentType(java.lang.reflect.Type, int)
+	 */
+	public static Class getGenericSupertype(Class type, int index) {
+		return getComponentType(type.getGenericSuperclass(), index);
 	}
 
 

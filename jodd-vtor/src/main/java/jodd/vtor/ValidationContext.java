@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.vtor;
 
@@ -27,7 +50,7 @@ public class ValidationContext {
 
 	// ---------------------------------------------------------------- define constraints
 
-	protected final Map<String, List<Check>> map = new HashMap<String, List<Check>>();
+	protected final Map<String, List<Check>> map = new HashMap<>();
 
 	/**
 	 * Adds validation checks.
@@ -36,7 +59,7 @@ public class ValidationContext {
 		String name = check.getName();
 		List<Check> list = map.get(name);
 		if (list == null) {
-			list = new ArrayList<Check>();
+			list = new ArrayList<>();
 			map.put(name, list);
 		}
 		list.add(check);
@@ -54,7 +77,7 @@ public class ValidationContext {
 
 	// ---------------------------------------------------------------- annotation resolver
 
-	private static Map<Class, List<Check>> cache = new HashMap<Class, List<Check>>();
+	private static Map<Class, List<Check>> cache = new HashMap<>();
 
 	/**
 	 * Resolve validation context for provided target class.
@@ -73,7 +96,7 @@ public class ValidationContext {
 	public void addClassChecks(Class target) {
 		List<Check> list = cache.get(target);
 		if (list == null) {
-			list = new ArrayList<Check>();
+			list = new ArrayList<>();
 			ClassDescriptor cd = ClassIntrospector.lookup(target);
 
 			PropertyDescriptor[] allProperties = cd.getAllPropertyDescriptors();

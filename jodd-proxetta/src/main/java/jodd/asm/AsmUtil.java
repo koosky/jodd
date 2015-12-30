@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.asm;
 
@@ -100,7 +123,7 @@ public class AsmUtil {
 					throw new IllegalArgumentException(INVALID_BASE_TYPE + desc);
 				}
 				break;
-			case 'L': className = className.substring(1, className.length() - 1);
+			case 'L': className = className.substring(1, className.length() - 1); break;
 			case '[':
 				// uses less-known feature of class loaders for loading array types
 				// using bytecode-like signatures.
@@ -266,7 +289,7 @@ public class AsmUtil {
 	 */
 	public static void intValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_INTEGER);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_INTEGER, "intValue", "()I");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_INTEGER, "intValue", "()I", false);
 	}
 
 	/**
@@ -274,7 +297,7 @@ public class AsmUtil {
 	 */
 	public static void longValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_LONG);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_LONG, "longValue", "()J");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_LONG, "longValue", "()J", false);
 	}
 
 	/**
@@ -282,7 +305,7 @@ public class AsmUtil {
 	 */
 	public static void floatValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_FLOAT);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_FLOAT, "floatValue", "()F");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_FLOAT, "floatValue", "()F", false);
 	}
 
 	/**
@@ -290,7 +313,7 @@ public class AsmUtil {
 	 */
 	public static void doubleValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_DOUBLE);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_DOUBLE, "doubleValue", "()D");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_DOUBLE, "doubleValue", "()D", false);
 	}
 
 	/**
@@ -298,7 +321,7 @@ public class AsmUtil {
 	 */
 	public static void byteValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_BYTE);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_BYTE, "byteValue", "()B");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_BYTE, "byteValue", "()B", false);
 	}
 
 	/**
@@ -306,7 +329,7 @@ public class AsmUtil {
 	 */
 	public static void shortValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_SHORT);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_SHORT, "shortValue", "()S");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_SHORT, "shortValue", "()S", false);
 	}
 
 	/**
@@ -314,7 +337,7 @@ public class AsmUtil {
 	 */
 	public static void booleanValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_BOOLEAN);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_BOOLEAN, "booleanValue", "()Z");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_BOOLEAN, "booleanValue", "()Z", false);
 	}
 
 	/**
@@ -322,38 +345,38 @@ public class AsmUtil {
 	 */
 	public static void charValue(MethodVisitor mv) {
 		mv.visitTypeInsn(CHECKCAST, SIGNATURE_JAVA_LANG_CHARACTER);
-		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_CHARACTER, "charValue", "()C");
+		mv.visitMethodInsn(INVOKEVIRTUAL, SIGNATURE_JAVA_LANG_CHARACTER, "charValue", "()C", false);
 	}
 
 	public static void valueOfInteger(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_INTEGER, "valueOf", "(I)Ljava/lang/Integer;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_INTEGER, "valueOf", "(I)Ljava/lang/Integer;", false);
 	}
 
 	public static void valueOfLong(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_LONG, "valueOf", "(J)Ljava/lang/Long;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_LONG, "valueOf", "(J)Ljava/lang/Long;", false);
 	}
 
 	public static void valueOfFloat(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_FLOAT, "valueOf", "(F)Ljava/lang/Float;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_FLOAT, "valueOf", "(F)Ljava/lang/Float;", false);
 	}
 
 	public static void valueOfDouble(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_DOUBLE, "valueOf", "(D)Ljava/lang/Double;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_DOUBLE, "valueOf", "(D)Ljava/lang/Double;", false);
 	}
 
 	public static void valueOfByte(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_BYTE, "valueOf", "(B)Ljava/lang/Byte;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_BYTE, "valueOf", "(B)Ljava/lang/Byte;", false);
 	}
 
 	public static void valueOfShort(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_SHORT, "valueOf", "(S)Ljava/lang/Short;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_SHORT, "valueOf", "(S)Ljava/lang/Short;", false);
 	}
 
 	public static void valueOfBoolean(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_BOOLEAN, "valueOf", "(Z)Ljava/lang/Boolean;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_BOOLEAN, "valueOf", "(Z)Ljava/lang/Boolean;", false);
 	}
 
 	public static void valueOfCharacter(MethodVisitor mv) {
-		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_CHARACTER, "valueOf", "(C)Ljava/lang/Character;");
+		mv.visitMethodInsn(INVOKESTATIC, SIGNATURE_JAVA_LANG_CHARACTER, "valueOf", "(C)Ljava/lang/Character;", false);
 	}
 }

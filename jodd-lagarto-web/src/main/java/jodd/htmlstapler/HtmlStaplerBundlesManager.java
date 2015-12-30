@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.htmlstapler;
 
@@ -9,6 +32,7 @@ import jodd.io.ZipUtil;
 import jodd.io.findfile.FindFile;
 import jodd.util.Base32;
 import jodd.util.CharUtil;
+import jodd.util.RandomString;
 import jodd.util.StringBand;
 import jodd.util.StringPool;
 import jodd.util.StringUtil;
@@ -51,6 +75,9 @@ public class HtmlStaplerBundlesManager {
 	protected boolean downloadLocal;
 	protected boolean sortResources;
 	protected boolean notFoundExceptionEnabled = true;
+	protected int randomDigestChars = 0;
+
+	private static String uniqueDigestKey;
 
 	// ---------------------------------------------------------------- strategy
 
@@ -87,8 +114,8 @@ public class HtmlStaplerBundlesManager {
 		this.bundleFolder = SystemUtil.getTempDir();
 
 		if (strategy == Strategy.ACTION_MANAGED) {
-			actionBundles = new HashMap<String, String>();
-			mirrors = new HashMap<String, String>();
+			actionBundles = new HashMap<>();
+			mirrors = new HashMap<>();
 		}
 	}
 
@@ -223,6 +250,37 @@ public class HtmlStaplerBundlesManager {
 		this.notFoundExceptionEnabled = notFoundExceptionEnabled;
 	}
 
+	/**
+	 * Returns the number of random digest chars.
+	 */
+	public int getRandomDigestChars() {
+		return randomDigestChars;
+	}
+
+	/**
+	 * Sets the number of random characters that will be appended to the
+	 * {@link #createDigest(String) digest}. When it is set to 0, nothing
+	 * will be appended to the digest. Otherwise, a random string will be
+	 * generated (containing only letters and digits) and appended to the
+	 * digest.
+	 * <p>
+	 * Random digest chars is a <b>unique</b> key per one VM!
+	 * This key is initialized only once.
+	 * This is useful to automatically expire any cache that browsers may have in
+	 * JS and CSS files, so that changes in those files will be downloaded by the
+	 * browser.
+	 */
+	public void setRandomDigestChars(int randomDigestChars) {
+		this.randomDigestChars = randomDigestChars;
+
+		if (randomDigestChars == 0) {
+			uniqueDigestKey = null;
+		}
+		else {
+			uniqueDigestKey = new RandomString().randomAlphaNumeric(randomDigestChars);
+		}
+	}
+
 	// ---------------------------------------------------------------- lookup
 
 	/**
@@ -348,7 +406,13 @@ public class HtmlStaplerBundlesManager {
 		}
 
 		byte[] bytes = shaDigester.digest(CharUtil.toSimpleByteArray(source));
-		return Base32.encode(bytes);
+		String digest = Base32.encode(bytes);
+
+		if (uniqueDigestKey != null) {
+			digest += uniqueDigestKey;
+		}
+
+		return digest;
 	}
 
 	/**

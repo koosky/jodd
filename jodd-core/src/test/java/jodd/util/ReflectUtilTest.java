@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.util;
 
@@ -507,8 +530,8 @@ public class ReflectUtilTest {
 		assertEquals(String[].class, ReflectUtil.getRawType(array1.getGenericType(), ConcreteClass.class));
 
 		assertEquals(Object.class, ReflectUtil.getRawType(f1.getGenericType()));
-		assertNull(ReflectUtil.getComponentType(f1.getGenericType()));
-		assertEquals(Long.class, ReflectUtil.getComponentType(f5.getGenericType()));
+		assertNull(ReflectUtil.getComponentType(f1.getGenericType(), -1));
+		assertEquals(Long.class, ReflectUtil.getComponentType(f5.getGenericType(), 0));
 	}
 
 	@Test
@@ -543,49 +566,48 @@ public class ReflectUtilTest {
 
 		Field stringList = sooClass.getField("stringList");
 		assertEquals(List.class, ReflectUtil.getRawType(stringList.getType()));
-		assertEquals(String.class, ReflectUtil.getComponentType(stringList.getGenericType()));
+		assertEquals(String.class, ReflectUtil.getComponentType(stringList.getGenericType(), 0));
 
 		Field strings = sooClass.getField("strings");
 		assertEquals(String[].class, ReflectUtil.getRawType(strings.getType()));
-		assertEquals(String.class, ReflectUtil.getComponentType(strings.getGenericType()));
+		assertEquals(String.class, ReflectUtil.getComponentType(strings.getGenericType(), -1));
 
 		Field string = sooClass.getField("string");
 		assertEquals(String.class, ReflectUtil.getRawType(string.getType()));
-		assertNull(ReflectUtil.getComponentType(string.getGenericType()));
+		assertNull(ReflectUtil.getComponentType(string.getGenericType(), 0));
 
 		Method integerList = ReflectUtil.findMethod(sooClass, "getIntegerList");
 		assertEquals(List.class, ReflectUtil.getRawType(integerList.getReturnType()));
-		assertEquals(Integer.class, ReflectUtil.getComponentType(integerList.getGenericReturnType()));
+		assertEquals(Integer.class, ReflectUtil.getComponentType(integerList.getGenericReturnType(), -1));
 
 		Method integers = ReflectUtil.findMethod(sooClass, "getIntegers");
 		assertEquals(Integer[].class, ReflectUtil.getRawType(integers.getReturnType()));
-		assertEquals(Integer.class, ReflectUtil.getComponentType(integers.getGenericReturnType()));
+		assertEquals(Integer.class, ReflectUtil.getComponentType(integers.getGenericReturnType(), 0));
 
 		Method integer = ReflectUtil.findMethod(sooClass, "getInteger");
 		assertEquals(Integer.class, ReflectUtil.getRawType(integer.getReturnType()));
-		assertNull(ReflectUtil.getComponentType(integer.getGenericReturnType()));
+		assertNull(ReflectUtil.getComponentType(integer.getGenericReturnType(), -1));
 
 		Method template = ReflectUtil.findMethod(sooClass, "getTemplate");
 		assertEquals(Object.class, ReflectUtil.getRawType(template.getReturnType()));
-		assertNull(ReflectUtil.getComponentType(template.getGenericReturnType()));
+		assertNull(ReflectUtil.getComponentType(template.getGenericReturnType(), 0));
 
 		Method collection = ReflectUtil.findMethod(sooClass, "getCollection");
 		assertEquals(Collection.class, ReflectUtil.getRawType(collection.getReturnType()));
-		assertEquals(Number.class, ReflectUtil.getComponentType(collection.getGenericReturnType()));
+		assertEquals(Number.class, ReflectUtil.getComponentType(collection.getGenericReturnType(), -1));
 
 		Method collection2 = ReflectUtil.findMethod(sooClass, "getCollection2");
 		assertEquals(Collection.class, ReflectUtil.getRawType(collection2.getReturnType()));
-		assertEquals(Object.class, ReflectUtil.getComponentType(collection2.getGenericReturnType()));
+		assertEquals(Object.class, ReflectUtil.getComponentType(collection2.getGenericReturnType(), 0));
 	}
 
 	public static class Base2<N extends Number, K> {
 		public N getNumber() {return null;}
 		public K getKiko() {return null;}
 	}
-	public static class Impl1<N extends Number> extends Base2<N, Long> {
-	}
-	public static class Impl2 extends Impl1<Integer> {
-	}
+	public static class Impl1<N extends Number> extends Base2<N, Long> {}
+	public static class Impl2 extends Impl1<Integer> {}
+	public static class Impl3 extends Impl2 {}
 
 	@Test
 	public void testGetRawWithImplClass() throws NoSuchFieldException {
@@ -609,7 +631,107 @@ public class ReflectUtilTest {
 
 		assertEquals(Object.class, ReflectUtil.getRawType(kiko.getReturnType(), Impl2.class));
 		assertEquals(Long.class, ReflectUtil.getRawType(kiko.getGenericReturnType(), Impl2.class));
+
+		assertEquals(Number.class, ReflectUtil.getRawType(number.getReturnType(), Impl3.class));
+		assertEquals(Integer.class, ReflectUtil.getRawType(number.getGenericReturnType(), Impl3.class));
+
+		assertEquals(Object.class, ReflectUtil.getRawType(kiko.getReturnType(), Impl3.class));
+		assertEquals(Long.class, ReflectUtil.getRawType(kiko.getGenericReturnType(), Impl3.class));
 	}
+
+	public static class Base22<K, N extends Number> {}
+	public static class Impl11<N extends Number> extends Base22<Long, N> {}
+	public static class Impl22 extends Impl11<Integer> {}
+	public static class Impl33 extends Impl22 {}
+
+
+	@Test
+	public void testClassGenerics1() {
+		Class[] componentTypes = ReflectUtil.getGenericSupertypes(Base2.class);
+		assertNull(componentTypes);
+
+		Type[] types = Base2.class.getGenericInterfaces();
+		assertEquals(0, types.length);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(Impl1.class);
+		assertEquals(2, componentTypes.length);
+		assertEquals(Number.class, componentTypes[0]);
+		assertEquals(Long.class, componentTypes[1]);
+
+		types = Impl1.class.getGenericInterfaces();
+		assertEquals(0, types.length);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(Impl2.class);
+		assertEquals(1, componentTypes.length);
+		assertEquals(Integer.class, componentTypes[0]);
+
+		types = Impl2.class.getGenericInterfaces();
+		assertEquals(0, types.length);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(Impl3.class);
+		assertNull(componentTypes);
+	}
+
+	@Test
+	public void testClassGenerics2() {
+		Class[] componentTypes = ReflectUtil.getGenericSupertypes(Base22.class);
+		assertNull(componentTypes);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(Impl11.class);
+		assertEquals(2, componentTypes.length);
+		assertEquals(Long.class, componentTypes[0]);
+		assertEquals(Number.class, componentTypes[1]);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(Impl22.class);
+		assertEquals(1, componentTypes.length);
+		assertEquals(Integer.class, componentTypes[0]);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(Impl33.class);
+		assertNull(componentTypes);
+	}
+
+	public static interface BaseAna<K, N extends Number> {}
+	public static interface ImplAna<N extends Number> extends BaseAna<Long, N> {}
+	public static interface ImplAna2 extends ImplAna<Integer> {}
+	public static class ImplAna3 implements ImplAna2 {}
+	public static class ImplAna4 extends ImplAna3 {}
+
+	@Test
+	public void testClassGenerics3() {
+		Class[] componentTypes = ReflectUtil.getGenericSupertypes(BaseAna.class);
+		assertNull(componentTypes);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(ImplAna.class);
+		assertNull(componentTypes);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(ImplAna2.class);
+		assertNull(componentTypes);
+
+		componentTypes = ReflectUtil.getGenericSupertypes(ImplAna3.class);
+		assertNull(componentTypes);
+
+		// scan generic interfacase
+
+		Type[] types = ImplAna3.class.getGenericInterfaces();
+		assertEquals(1, types.length);
+		assertEquals(ImplAna2.class, types[0]);
+		assertNull(ReflectUtil.getComponentType(types[0], 0));
+
+		types = ImplAna2.class.getGenericInterfaces();
+		assertEquals(1, types.length);
+		assertEquals(Integer.class, ReflectUtil.getComponentType(types[0], 0));
+
+		types = ImplAna.class.getGenericInterfaces();
+		assertEquals(1, types.length);
+		assertEquals(Long.class, ReflectUtil.getComponentType(types[0], 0));
+
+		types = BaseAna.class.getGenericInterfaces();
+		assertEquals(0, types.length);
+
+		types = ImplAna4.class.getGenericInterfaces();
+		assertEquals(0, types.length);
+	}
+
 
 	// ---------------------------------------------------------------- type2string
 
@@ -730,7 +852,7 @@ public class ReflectUtilTest {
 	public interface Cool extends SomeGuy {}
 	public interface Vigilante {}
 	public interface Flying extends Vigilante {}
-	public interface SuperMario extends Flying, Cool {};
+	public interface SuperMario extends Flying, Cool {}
 	public class User implements SomeGuy {}
 	public class SuperUser extends User implements Cool {}
 	public class SuperMan extends SuperUser implements Flying {}

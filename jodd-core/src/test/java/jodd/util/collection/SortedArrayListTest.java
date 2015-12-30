@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.util.collection;
 
@@ -10,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import jodd.util.RandomStringUtil;
+import jodd.util.RandomString;
 
 import org.junit.Test;
 
@@ -18,7 +41,7 @@ public class SortedArrayListTest {
 
 	@Test
 	public void testList1() {
-		SortedArrayList<String> list = new SortedArrayList<String>();
+		SortedArrayList<String> list = new SortedArrayList<>();
 
 		list.add("aaa");
 		list.add("bbb");
@@ -57,7 +80,7 @@ public class SortedArrayListTest {
 
 	@Test
 	public void testList2() {
-		SortedArrayList<String> list = new SortedArrayList<String>();
+		SortedArrayList<String> list = new SortedArrayList<>();
 
 		list.add("bbb");
 		list.add("aaa");
@@ -81,12 +104,12 @@ public class SortedArrayListTest {
 	public void testRandom() {
 		int total = 100000;
 
-		ArrayList<String> randomList = new ArrayList<String>();
+		ArrayList<String> randomList = new ArrayList<>();
 		for (int i = 0; i < total; i++) {
-			randomList.add(RandomStringUtil.random(20, 'a', 'z'));
+			randomList.add(RandomString.getInstance().random(20, 'a', 'z'));
 		}
 
-		SortedArrayList<String> sortedList = new SortedArrayList<String>(randomList);
+		SortedArrayList<String> sortedList = new SortedArrayList<>(randomList);
 
 		Collections.sort(randomList);
 
@@ -113,7 +136,7 @@ public class SortedArrayListTest {
 				return str2.compareTo(str1);
 			}
 		};
-		SortedArrayList<String> list = new SortedArrayList<String>(comparator);
+		SortedArrayList<String> list = new SortedArrayList<>(comparator);
 		assertNotNull(list.getComparator());
 		list.add("aaa");
 		list.add("bbb");

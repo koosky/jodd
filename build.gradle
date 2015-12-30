@@ -1,3 +1,28 @@
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
 description = '''
 
 	Jodd is an open-source Java utility library and set of micro frameworks.
@@ -8,9 +33,7 @@ description = '''
 	simple, but not simpler.
 '''
 
-version = '3.6.2'
-//version = '3.6.3-SNAPSHOT'
-//version = '3.6.3-BETA1'
+version = '3.6.7-SNAPSHOT'
 
 
 // --- properties -------------------------------------------------------------
@@ -35,12 +58,13 @@ ext {
 
 //		asm:			'org.ow2.asm:asm:4.1',
 
-		junit: 			'junit:junit:4.11',
+		junit: 			'junit:junit:4.12',
+		hamcrest:       'org.hamcrest:hamcrest-core:1.3',
 		mockito:		'org.mockito:mockito-all:1.9.5',
 		hsqldb:			'org.hsqldb:hsqldb:2.2.9',
 		h2db:			'com.h2database:h2:1.1.111',
-		postgresql:		'postgresql:postgresql:9.1-901-1.jdbc4',
-		mysql:			'mysql:mysql-connector-java:5.1.21',
+		postgresql:		'org.postgresql:postgresql:9.4-1201-jdbc41',
+		mysql:			'mysql:mysql-connector-java:5.1.35',
 		winstone:		'net.sourceforge.winstone:winstone:0.9.10',
 		//el_api:		'javax.el:el-api:2.2',
 		el_api:			"org.apache.tomcat:tomcat-jasper:${tomcatVersion}",
@@ -54,9 +78,6 @@ ext {
 							"org.apache.tomcat.embed:tomcat-embed-logging-log4j:${tomcatVersion}"],
 		jacoco_agent:	"org.jacoco:org.jacoco.agent:${jacocoVersion}:runtime@jar",
 		jacoco_ant:		"org.jacoco:org.jacoco.ant:${jacocoVersion}",
-
-		animal_sniffer: 'org.codehaus.mojo:animal-sniffer-ant-tasks:1.11',
-		java15_signature: 'org.codehaus.mojo.signature:java15:1.0@signature',
 	]
 
 	commonManifest = [
@@ -136,8 +157,8 @@ configure(javaModules()) {
 
 	// compile
 
-	sourceCompatibility = 1.5
-	targetCompatibility = 1.5
+	sourceCompatibility = 1.7
+	targetCompatibility = 1.7
 
 	tasks.withType(JavaCompile) {
 		options.encoding = 'UTF-8'
@@ -227,7 +248,8 @@ configure(javaModules()) {
 				encoding = 'UTF-8'
 				docEncoding = 'UTF-8'
 				stylesheetFile = file('src/main/javadoc/jodd.css')
-				source = '1.5'
+				source = '1.7'
+				failOnError = false
 			}
 		}
 	}
@@ -267,45 +289,6 @@ configure(javaModules()) {
 		}
 	}
 
-	// Animal Sniffer
-
-	configurations {
-		animalSniffer
-		javaApiSignature
-	}
-
-	dependencies {
-		animalSniffer(lib.animal_sniffer)
-    	javaApiSignature(lib.java15_signature)
-    }
-
-	// copy the resolved Animal Sniffer signature dependency artifact to a known location and name
-	task copyJavaApiSignature(type: Copy) {
-		from configurations.javaApiSignature
-		into "$buildDir/javaApiSignature/"
-		rename '.*signature', 'javaApi.signature'
-	}
-
-	// prepare the Animal Sniffer signature copy every time (before) we compile
-	compileJava.dependsOn copyJavaApiSignature
-
-	// and then after compilation, run the Animal Sniffer tool
-	compileJava << {
-		print "$buildDir/javaApiSignature/"
-		ant.taskdef(
-				name: 'animalSniffer',
-				classname: 'org.codehaus.mojo.animal_sniffer.ant.CheckSignatureTask',
-				classpath: configurations.animalSniffer.asPath
-		)
-
-		ant.animalSniffer(
-				signature: "$buildDir/javaApiSignature/javaApi.signature",
-				classpath: sourceSets.main.compileClasspath.asPath) {
-			path(path: sourceSets.main.output.classesDir)
-			ignore(className: "java.nio.CharBuffer")
-			ignore(className: "sun.misc.Unsafe")
-		}
-	}
 }
 
 // --- project ----------------------------------------------------------------
@@ -355,7 +338,7 @@ task javadocAll(type: Javadoc) {
 		encoding = 'UTF-8'
 		docEncoding = 'UTF-8'
 		stylesheetFile = file('src/main/javadoc/jodd.css')
-		source = '1.5'
+		source = '1.7'
 	}
 
 	inputs.files(javaBundleModulesSources.allSource + javaBundleModulesSources.compileClasspath)
@@ -507,5 +490,5 @@ gradle.taskGraph.whenReady { taskGraph ->
 // --- wrapper ----------------------------------------------------------------
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.1'
+	gradleVersion = '2.4'
 }

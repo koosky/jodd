@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.jerry;
 
@@ -594,6 +617,9 @@ public class Jerry implements Iterable<Jerry> {
 
 	/**
 	 * Sets one or more CSS properties for the set of matched elements.
+	 * By passing an empty value, that property will be removed.
+	 * Note that this is different from jQuery, where this means
+	 * that property will be reset to previous value if existed.
 	 */
 	public Jerry css(String propertyName, String value) {
 		propertyName = StringUtil.fromCamelCase(propertyName, '-');
@@ -601,7 +627,11 @@ public class Jerry implements Iterable<Jerry> {
 		for (Node node : nodes) {
 			String styleAttrValue = node.getAttribute("style");
 			Map<String, String> styles = createPropertiesMap(styleAttrValue, ';', ':');
-			styles.put(propertyName, value);
+			if (value.length() == 0) {
+				styles.remove(propertyName);
+			} else {
+				styles.put(propertyName, value);
+			}
 
 			styleAttrValue = generateAttributeValue(styles, ';', ':');
 			node.setAttribute("style", styleAttrValue);
@@ -620,7 +650,12 @@ public class Jerry implements Iterable<Jerry> {
 			for (int i = 0; i < css.length; i += 2) {
 				String propertyName = css[i];
 				propertyName = StringUtil.fromCamelCase(propertyName, '-');
-				styles.put(propertyName, css[i + 1]);
+				String value = css[i + 1];
+				if (value.length() == 0) {
+					styles.remove(propertyName);
+				} else {
+					styles.put(propertyName, value);
+				}
 			}
 			styleAttrValue = generateAttributeValue(styles, ';', ':');
 			node.setAttribute("style", styleAttrValue);
@@ -637,7 +672,6 @@ public class Jerry implements Iterable<Jerry> {
 			Set<String> classes = createPropertiesSet(attrClass, ' ');
 			boolean wasChange = false;
 			for (String className : classNames) {
-				className = StringUtil.fromCamelCase(className, '-');
 				if (classes.add(className) == true) {
 					wasChange = true;
 				}
@@ -658,7 +692,6 @@ public class Jerry implements Iterable<Jerry> {
 			String attrClass = node.getAttribute("class");
 			Set<String> classes = createPropertiesSet(attrClass, ' ');
 			for (String className : classNames) {
-				className = StringUtil.fromCamelCase(className, '-');
 				if (classes.contains(className)) {
 					return true;
 				}
@@ -677,7 +710,6 @@ public class Jerry implements Iterable<Jerry> {
 			Set<String> classes = createPropertiesSet(attrClass, ' ');
 			boolean wasChange = false;
 			for (String className : classNames) {
-				className = StringUtil.fromCamelCase(className, '-');
 				if (classes.remove(className) == true) {
 					wasChange = true;
 				}
@@ -700,7 +732,6 @@ public class Jerry implements Iterable<Jerry> {
 			String attrClass = node.getAttribute("class");
 			Set<String> classes = createPropertiesSet(attrClass, ' ');
 			for (String className : classNames) {
-				className = StringUtil.fromCamelCase(className, '-');
 				if (classes.contains(className) == true) {
 					classes.remove(className);
 				} else {
@@ -913,7 +944,7 @@ public class Jerry implements Iterable<Jerry> {
 		for (Node node : form.nodes) {
 			Jerry singleForm = new Jerry(this, node);
 
-			final Map<String, String[]> parameters = new HashMap<String, String[]>();
+			final Map<String, String[]> parameters = new HashMap<>();
 
 			// process all input elements
 
@@ -1012,10 +1043,10 @@ public class Jerry implements Iterable<Jerry> {
 
 	protected Set<String> createPropertiesSet(String attrValue, char propertiesDelimiter) {
 		if (attrValue == null) {
-			return new LinkedHashSet<String>();
+			return new LinkedHashSet<>();
 		}
 		String[] properties = StringUtil.splitc(attrValue, propertiesDelimiter);
-		LinkedHashSet<String> set = new LinkedHashSet<String>(properties.length);
+		LinkedHashSet<String> set = new LinkedHashSet<>(properties.length);
 
 		Collections.addAll(set, properties);
 		return set;
@@ -1037,10 +1068,10 @@ public class Jerry implements Iterable<Jerry> {
 	
 	protected Map<String, String> createPropertiesMap(String attrValue, char propertiesDelimiter, char valueDelimiter) {
 		if (attrValue == null) {
-			return new LinkedHashMap<String, String>();
+			return new LinkedHashMap<>();
 		}
 		String[] properties = StringUtil.splitc(attrValue, propertiesDelimiter);
-		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>(properties.length);
+		LinkedHashMap<String, String> map = new LinkedHashMap<>(properties.length);
 		for (String property : properties) {
 			int valueDelimiterIndex = property.indexOf(valueDelimiter);
 			if (valueDelimiterIndex != -1) {

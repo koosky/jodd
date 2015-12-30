@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.proxetta.asm;
 
@@ -115,10 +138,20 @@ public class ProxettaMethodBuilder extends EmptyMethodVisitor {
 
 		if (tmd.msign.isStatic) {
 			loadStaticMethodArguments(methodVisitor, tmd.msign);
-			methodVisitor.visitMethodInsn(INVOKESTATIC, wd.thisReference, tmd.firstMethodName(), tmd.msign.getDescription());
+			methodVisitor.visitMethodInsn(
+				INVOKESTATIC,
+				wd.thisReference,
+				tmd.firstMethodName(),
+				tmd.msign.getDescription(),
+				false);
 		} else {
 			loadSpecialMethodArguments(methodVisitor, tmd.msign);
-			methodVisitor.visitMethodInsn(INVOKESPECIAL, wd.thisReference, tmd.firstMethodName(), tmd.msign.getDescription());
+			methodVisitor.visitMethodInsn(
+				INVOKESPECIAL,
+				wd.thisReference,
+				tmd.firstMethodName(),
+				tmd.msign.getDescription(),
+				false);
 		}
 
 		visitReturn(methodVisitor, tmd.msign, false);
@@ -197,7 +230,7 @@ public class ProxettaMethodBuilder extends EmptyMethodVisitor {
 
 					@SuppressWarnings({"ParameterNameDiffersFromOverriddenParameter"})
 					@Override
-					public void visitMethodInsn(int opcode, String string, String mname, String mdesc) {
+					public void visitMethodInsn(int opcode, String string, String mname, String mdesc, boolean isInterface) {
 						if ((opcode == INVOKEVIRTUAL) || (opcode == INVOKEINTERFACE) || (opcode == INVOKESPECIAL)) {
 							if (string.equals(aspectData.adviceReference)) {
 								string = wd.thisReference;
@@ -219,16 +252,26 @@ public class ProxettaMethodBuilder extends EmptyMethodVisitor {
 										if (wd.isWrapper() == false) {
 											// PROXY
 											loadSpecialMethodArguments(mv, td.msign);
-											mv.visitMethodInsn(INVOKESPECIAL, wd.superReference, td.msign.getMethodName(), td.msign.getDescription());
+											mv.visitMethodInsn(INVOKESPECIAL, wd.superReference, td.msign.getMethodName(), td.msign.getDescription(), isInterface);
 										} else {
 											// WRAPPER
 											mv.visitVarInsn(ALOAD, 0);
 											mv.visitFieldInsn(GETFIELD, wd.thisReference, wd.wrapperRef, wd.wrapperType);
 											loadVirtualMethodArguments(mv, td.msign);
 											if (wd.wrapInterface) {
-												mv.visitMethodInsn(INVOKEINTERFACE, wd.wrapperType.substring(1, wd.wrapperType.length() - 1), td.msign.getMethodName(), td.msign.getDescription());
+												mv.visitMethodInsn(
+													INVOKEINTERFACE,
+													wd.wrapperType.substring(1, wd.wrapperType.length() - 1),
+													td.msign.getMethodName(),
+													td.msign.getDescription(),
+													true);
 											} else {
-												mv.visitMethodInsn(INVOKEVIRTUAL, wd.wrapperType.substring(1, wd.wrapperType.length() - 1), td.msign.getMethodName(), td.msign.getDescription());
+												mv.visitMethodInsn(
+													INVOKEVIRTUAL,
+													wd.wrapperType.substring(1, wd.wrapperType.length() - 1),
+													td.msign.getMethodName(),
+													td.msign.getDescription(),
+													isInterface);
 											}
 										}
 
@@ -236,7 +279,7 @@ public class ProxettaMethodBuilder extends EmptyMethodVisitor {
 										traceNext = true;
 									} else {                                                    // calls next proxy method
 										loadSpecialMethodArguments(mv, td.msign);
-										mv.visitMethodInsn(INVOKESPECIAL, wd.thisReference, td.nextMethodName(), td.msign.getDescription());
+										mv.visitMethodInsn(INVOKESPECIAL, wd.thisReference, td.nextMethodName(), td.msign.getDescription(), isInterface);
 										visitReturn(mv, td.msign, false);
 									}
 									return;
@@ -341,7 +384,7 @@ public class ProxettaMethodBuilder extends EmptyMethodVisitor {
 								}
 							}
 						}
-						super.visitMethodInsn(opcode, string, mname, mdesc);
+						super.visitMethodInsn(opcode, string, mname, mdesc, isInterface);
 					}
 
 				};

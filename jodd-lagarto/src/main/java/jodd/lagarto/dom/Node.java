@@ -1,4 +1,27 @@
-// Copyright (c) 2003-2014, Jodd Team (jodd.org). All Rights Reserved.
+// Copyright (c) 2003-present, Jodd Team (http://jodd.org)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 package jodd.lagarto.dom;
 
@@ -47,10 +70,6 @@ public abstract class Node implements Cloneable {
 	protected int siblingElementIndex = -1;
 	protected int siblingNameIndex = -1;
 
-	// position information
-
-	protected int deepLevel;
-
 	/**
 	 * Creates new node.
 	 */
@@ -74,10 +93,9 @@ public abstract class Node implements Cloneable {
 	protected <T extends Node> T cloneTo(T dest) {
 //		dest.nodeValue = nodeValue;		// already  in clone implementations!
 		dest.parentNode = parentNode;
-		dest.deepLevel = deepLevel;
 
 		if (attributes != null) {
-			dest.attributes = new ArrayList<Attribute>(attributes.size());
+			dest.attributes = new ArrayList<>(attributes.size());
 			for (int i = 0, attributesSize = attributes.size(); i < attributesSize; i++) {
 				Attribute attr = attributes.get(i);
 				dest.attributes.add(attr.clone());
@@ -85,7 +103,7 @@ public abstract class Node implements Cloneable {
 		}
 
 		if (childNodes != null) {
-			dest.childNodes = new ArrayList<Node>(childNodes.size());
+			dest.childNodes = new ArrayList<>(childNodes.size());
 			for (int i = 0, childNodesSize = childNodes.size(); i < childNodesSize; i++) {
 				Node child = childNodes.get(i);
 				Node childClone = child.clone();
@@ -159,7 +177,6 @@ public abstract class Node implements Cloneable {
 			parentNode.reindexChildren();
 		}
 		parentNode = null;
-		deepLevel = 0;
 	}
 
 	/**
@@ -169,7 +186,6 @@ public abstract class Node implements Cloneable {
 	public void addChild(Node node) {
 		node.detachFromParent();
 		node.parentNode = this;
-		node.deepLevel = deepLevel + 1;
 		initChildNodes(node);
 		childNodes.add(node);
 		reindexChildrenOnAdd(1);
@@ -183,7 +199,6 @@ public abstract class Node implements Cloneable {
 		for (Node node : nodes) {
 			node.detachFromParent();
 			node.parentNode = this;
-			node.deepLevel = deepLevel + 1;
 			initChildNodes(node);
 			childNodes.add(node);
 		}
@@ -196,7 +211,6 @@ public abstract class Node implements Cloneable {
 	public void insertChild(Node node, int index) {
 		node.detachFromParent();
 		node.parentNode = this;
-		node.deepLevel = deepLevel + 1;
 		try {
 			initChildNodes(node);
 			childNodes.add(index, node);
@@ -214,7 +228,6 @@ public abstract class Node implements Cloneable {
 		for (Node node : nodes) {
 			node.detachFromParent();
 			node.parentNode = this;
-			node.deepLevel = deepLevel + 1;
 			try {
 				initChildNodes(node);
 				childNodes.add(index, node);
@@ -821,7 +834,7 @@ public abstract class Node implements Cloneable {
 	 */
 	protected void initAttributes() {
 		if (attributes == null) {
-			attributes = new ArrayList<Attribute>(5);
+			attributes = new ArrayList<>(5);
 		}
 	}
 
@@ -831,7 +844,7 @@ public abstract class Node implements Cloneable {
 	 */
 	protected void initChildNodes(Node newNode) {
 		if (childNodes == null) {
-			childNodes = new ArrayList<Node>();
+			childNodes = new ArrayList<>();
 		}
 		if (ownerDocument != null) {
 			if (newNode.ownerDocument != ownerDocument) {
@@ -1084,14 +1097,6 @@ public abstract class Node implements Cloneable {
 	protected abstract void visitNode(NodeVisitor nodeVisitor);
 
 	// ---------------------------------------------------------------- misc
-
-	/**
-	 * Returns deep level.
-	 */
-	public int getDeepLevel() {
-		return deepLevel;
-	}
-
 
 	/**
 	 * Returns CSS path to this node from document root.
